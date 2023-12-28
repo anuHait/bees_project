@@ -140,7 +140,7 @@ const Index = () => {
           placeholder="Type a message here"/>
           <div className="flex items center gap-2 flex-row">
           <IoSend className="font-semibold text-xl text-gray-600 "/>
-          <CiCirclePlus className="font-semibold text-2xl text-gray-600 font-bold"/>
+          <CiCirclePlus className=" text-2xl text-gray-600 font-bold"/>
 
           </div>
           </div>
