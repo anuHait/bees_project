@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 function Index() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(''); // New state for username
+  const [name, setName] = useState(''); // New state for name
   const [isSignUp, setIsSignUp] = useState(true); // New state for conditional rendering
 
   const handleEmailChange = (e) => {
@@ -14,8 +14,8 @@ function Index() {
     setPassword(e.target.value);
   };
 
-  const handleUsernameChange = (e) => {
-    setUsername(e.target.value);
+  const handlenameChange = (e) => {
+    setName(e.target.value);
   };
 
   const handleSubmit = (e) => {
@@ -23,7 +23,7 @@ function Index() {
     e.preventDefault();
     if (isSignUp) {
       // Handle sign up
-      console.log('Signing up with:', { email, password, username });
+      console.log('Signing up with:', { email, password, name });
     } else {
       // Handle sign in
       console.log('Signing in with:', { email, password });
@@ -55,17 +55,17 @@ function Index() {
               required
             />
           </div>
-          {isSignUp && ( // Only show username field for sign up
+          {isSignUp && ( // Only show name field for sign up
             <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-600">
-                Username
+              <label htmlFor="name" className="block text-sm font-medium text-gray-600">
+                name
               </label>
               <input
                 type="text"
-                id="username"
-                name="username"
-                value={username}
-                onChange={handleUsernameChange}
+                id="name"
+                name="name"
+                value={name}
+                onChange={handlenameChange}
                 className="mt-1 p-2 w-full border rounded-md"
                 required
               />
