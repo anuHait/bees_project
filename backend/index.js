@@ -1,6 +1,6 @@
 const express = require('express');
-//const bcryptjs = require('bcryptjs');
-//const jwt = require('jsonwebtoken');
+const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
 const port=process.env.PORT || 8000;
@@ -30,7 +30,7 @@ app.post('/api/signup', async (req, res, next) => {
                 res.status(400).send('User already exists');
             } else {
                 const newUser = new User({ name, email });
-                bcryptjs.hash(password, 10, (err, hashedPassword) => {
+                bcryptjs.hash(password, 6, (err, hashedPassword) => {
                     newUser.set('password', hashedPassword);
                     newUser.save();
                     next();
