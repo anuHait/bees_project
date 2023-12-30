@@ -47,6 +47,7 @@ function Index() {
         console.log(response);
         if(response.status===200){
           localStorage.setItem('user:token', response.data.token);
+          localStorage.setItem('user:detail', JSON.stringify(response.data.user));
          navigate('/dashboard', { replace: true });
         }
       })

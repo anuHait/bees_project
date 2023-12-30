@@ -1,53 +1,81 @@
-import { useState, React } from "react";
+import { useState, React,useEffect } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { IoSend } from "react-icons/io5";
 import { CiCirclePlus } from "react-icons/ci";
-
+import axios from "axios";  
 const Index = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')));
+  const [conversation, setConversation] = useState([]);
+
   const handleOpen = () => {
     setIsOpen(!isOpen);
   };
-  const item = [
-    {
-      id: 1,
-      name: "John Doe",
-      img: "https://example.com/john-doe.jpg",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      img: "https://example.com/jane-smith.jpg",
-      status: "Inactive",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      img: "https://example.com/bob-johnson.jpg",
-      status: "Pending",
-    },
-    {
-      id: 4,
-      name: "Alice Williams",
-      img: "https://example.com/alice-williams.jpg",
-      status: "Active",
-    },
-    {
-      id: 5,
-      name: "Charlie Brown",
-      img: "https://example.com/charlie-brown.jpg",
-      status: "Inactive",
-    },
-    {
-      id: 6,
-      name: "Eva Martinez",
-      img: "https://example.com/eva-martinez.jpg",
-      status: "Pending",
-    },
-  ];
+  useEffect(() => {
+		const loggedInUser = JSON.parse(localStorage.getItem('user:detail'))
+    console.log("loggedInUser:", loggedInUser);
 
+		const fetchConversations = async () => {
+      try {
+        console.log("loggedInUser?.id:", loggedInUser?.id);
+        if(loggedInUser?.id){
+        const res = await axios.get(`http://localhost:8000/api/conversations/${loggedInUser?.id}`)
+         setConversation(res.data);
+      }
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+      }
+    };
+    
+    fetchConversations();
+    
+	}, []);
+  console.log("conversation:",conversation);
+  // const item = [
+  //   {
+  //     id: 1,
+  //     name: "John Doe",
+  //     img: "https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg",
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Jane Smith",
+  //     img: "https://example.com/jane-smith.jpg",
+  //     status: "Inactive",
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Bob Johnson",
+  //     img: "https://example.com/bob-johnson.jpg",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "Alice Williams",
+  //     img: "https://example.com/alice-williams.jpg",
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "Charlie Brown",
+  //     img: "https://example.com/charlie-brown.jpg",
+  //     status: "Inactive",
+  //   },
+  //   {
+  //     id: 6,
+  //     name: "Eva Martinez",
+  //     img: "https://example.com/eva-martinez.jpg",
+  //     status: "Pending",
+  //   },
+  // ];
+ //console.log("conversation:",conversation);
+ const fetchMessages = async (conversationId) => {
+  //console.log("conversationId:", conversationId);
+  const res = await axios.get(`http://localhost:8000/api/messages/${conversationId}`)
+
+ }
   return (
     <div className="w-[100%] flex gap-4 m-5">
       {/*
@@ -71,27 +99,32 @@ const Index = () => {
       <div className="border shadow-md h-full  flex flex-col justify-start p-5 items-center bg-blue-100 rounded-lg">
         <div className="border-b-2 border-gray-400">
           <CgProfile className="font-bold text-gray-600 text-xl " />
-          <h1>Hello Anusmita</h1>
+          <h1>Hello {user.name}</h1>
         </div>
 
         <div className="mt-10">
           <h1 className="font-semibold text-gray-700 text-lg">Messages</h1>
           <div className="flex flex-col gap-4 ">
-            {item.map((item) => (
-              <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-300 p-3">
+            {
+              conversation?.length>0?(
+              conversation?.map((conversation) => (
+              <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-300 p-3"
+              onClick={()=>{fetchMessages(conversation?.conversationId)}}>
                 <div className="flex items-center">
                   <img
-                    src={item.img}
-                    className="w-16 h-16 rounded-full border-gray-300 border-2"
+                    src="https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg"
+                    className="w-16 h-16 rounded-[100%] border-gray-300 border-2"
                     alt="img"
                   />
                 </div>
                 <div className="flex flex-col justify-start items-start">
-                  <p className="font-semibold text-lg">{item.name}</p>
-                  <p className="text-md text-gray-700">{item.status}</p>
+                  <p className="font-semibold text-lg">{conversation?.user.name}</p>
+                  <p className="text-md text-gray-700">{conversation.user.email}</p>
                 </div>
-              </div>
-            ))}
+              </div>)
+            )):(
+              <div className="font-bold mt-12">No conversations </div>
+            )}
           </div>
         </div>
       </div>
@@ -107,29 +140,29 @@ const Index = () => {
             <p className="text-gray-700 text-md">Active</p>
           </div>
         </div>
-        <div className="h-[80%] border  overflow-scroll">
-          <div className="h-[1000px] px-10 py-14">
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tl-xl bg-blue-500 text-white p-4">
+        <div className="h-[80%] border  custom-scrollbar sm:custom-scrollbar-md md:custom-scrollbar-lg lg:custom-scrollbar-xl">
+          <div className="h-full px-10 py-14">
+            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
               neque.
             </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-300 ml-auto p-4">
+            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit.
               Voluptatibus, rerum.
             </div>
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tl-xl bg-blue-500 text-white p-4">
+            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
               neque.
             </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-300 ml-auto p-4">
+            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit.
               Voluptatibus, rerum.
             </div>
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tl-xl bg-blue-500 text-white p-4">
+            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
               neque.
             </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-300 ml-auto p-4">
+            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit.
               Voluptatibus, rerum.
             </div>
