@@ -8,7 +8,7 @@ const Index = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')));
   const [conversation, setConversation] = useState([]);
-
+  const [messages, setMessages] = useState({});
   const handleOpen = () => {
     setIsOpen(!isOpen);
   };
@@ -32,50 +32,23 @@ const Index = () => {
     
 	}, []);
   console.log("conversation:",conversation);
-  // const item = [
-  //   {
-  //     id: 1,
-  //     name: "John Doe",
-  //     img: "https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg",
-  //     status: "Active",
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "Jane Smith",
-  //     img: "https://example.com/jane-smith.jpg",
-  //     status: "Inactive",
-  //   },
-  //   {
-  //     id: 3,
-  //     name: "Bob Johnson",
-  //     img: "https://example.com/bob-johnson.jpg",
-  //     status: "Pending",
-  //   },
-  //   {
-  //     id: 4,
-  //     name: "Alice Williams",
-  //     img: "https://example.com/alice-williams.jpg",
-  //     status: "Active",
-  //   },
-  //   {
-  //     id: 5,
-  //     name: "Charlie Brown",
-  //     img: "https://example.com/charlie-brown.jpg",
-  //     status: "Inactive",
-  //   },
-  //   {
-  //     id: 6,
-  //     name: "Eva Martinez",
-  //     img: "https://example.com/eva-martinez.jpg",
-  //     status: "Pending",
-  //   },
-  // ];
+  
  //console.log("conversation:",conversation);
  const fetchMessages = async (conversationId) => {
-  //console.log("conversationId:", conversationId);
-  const res = await axios.get(`http://localhost:8000/api/messages/${conversationId}`)
+  try {
+    const res = await axios.get(`http://localhost:8000/api/messages/${conversationId}`);
+    const resData = res.data;
+    
+    // Assuming conversation has information about the other user
+    const otherUser = conversation.find(conv => conv.conversationId === conversationId)?.user;
 
- }
+    setMessages({ messages: resData, receiver: otherUser });
+    console.log("messages:", messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+  }
+};
+
   return (
     <div className="w-[100%] flex gap-4 m-5">
       {/*
@@ -123,60 +96,73 @@ const Index = () => {
                 </div>
               </div>)
             )):(
-              <div className="font-bold mt-12">No conversations </div>
+              <div className="font-bold mt-12">No conversations or no conversation selected </div>
             )}
           </div>
         </div>
       </div>
-      <div className="border shadow-md h-screen rounded-lg w-[55%] p-5 flex flex-col gap-4">
-        <div className="shadow-lg flex justify-start items-center gap-3 rounded-lg p-3">
-          <img
-            src=""
+      <div className="border shadow-md h-screen rounded-lg w-[65%] p-5 flex flex-col gap-4">
+      {
+          messages?.receiver?.name && (
+            <div className="shadow-lg flex justify-start items-center gap-3 rounded-lg p-3">
+            <img
+            src="https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg"
             className="w-20 h-20 rounded-full border-gray-400 border-2"
-            alt="img"
-          />
-          <div className="flex flex-col gap-3  items-center">
-            <p className="font-bold ">Alex</p>
-            <p className="text-gray-700 text-md">Active</p>
+              alt="img"
+            />
+            <div className="flex flex-col gap-3  items-center">
+              <p className="font-bold text-start">{messages?.receiver?.name}</p>
+              <p className="text-gray-700 text-md">{messages?.receiver?.email}</p>
+            </div>
           </div>
-        </div>
-        <div className="h-[80%] border  custom-scrollbar sm:custom-scrollbar-md md:custom-scrollbar-lg lg:custom-scrollbar-xl">
+          )
+      }
+        
+        <div className="h-[80%] border overflow-y-scroll  custom-scrollbar sm:custom-scrollbar-md md:custom-scrollbar-lg lg:custom-scrollbar-xl">
           <div className="h-full px-10 py-14">
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
-              neque.
-            </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
-              Voluptatibus, rerum.
-            </div>
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
-              neque.
-            </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
-              Voluptatibus, rerum.
-            </div>
-            <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tr-xl bg-blue-500 text-white p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
-              neque.
-            </div>
-            <div className="h-20 max-w-[60%] text-sm mb-10 rounded-b-xl rounded-tl-xl bg-purple-100 ml-auto p-4">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
-              Voluptatibus, rerum.
-            </div>
+            {
+              messages?.messages?.length > 0 ? (
+                messages.messages.map(({ message, user }) => {
+                  const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
+                  const id = loggedInUser?.id;
+                  const isCurrentUser = id === user?.senderId;
+            
+                  return (
+                    <div
+                      key={user.id} // Make sure to add a unique key for each rendered item
+                      className={`h-20 max-w-[60%] mb-10 text-sm rounded-b-xl ${
+                        isCurrentUser ? 'rounded-tl-xl bg-purple-100 ml-auto text-black' : 'rounded-tr-xl bg-blue-500 text-white'
+                      } p-4`}
+                    >
+                      {message}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="font-bold text-lg m-20">No messages</div>
+              )
+            }
+            
+            
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <input type="text" className=" rounded-lg p-2 w-[92%] bg-gray-100" 
-          placeholder="Type a message here"/>
-          <div className="flex items center gap-2 flex-row">
-          <IoSend className="font-semibold text-xl text-gray-600 "/>
-          <CiCirclePlus className=" text-2xl text-gray-600 font-bold"/>
-
-          </div>
-          </div>
+        {
+          messages?.receiver?.name && (
+            <div className="flex justify-between items-center">
+              <input
+                type="text"
+                className="rounded-lg p-2 w-[92%] bg-gray-100"
+                placeholder="Type a message here"
+              />
+              <div className="flex items center gap-2 flex-row">
+                <IoSend className="font-semibold text-xl text-gray-600 " />
+                <CiCirclePlus className="text-2xl text-gray-600 font-bold" />
+              </div>
+            </div>
+          )
+        }
+        
+       
           
       </div>
       <div className="border shadow-md h-screen rounded-lg w-[25%]"></div>
