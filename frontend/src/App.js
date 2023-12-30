@@ -2,16 +2,16 @@ import Signin from "./modules/Signin";
 import Dashboard from "./modules/Dashboard";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// const ProtectedRoute = ({ children }) => {
-//   const isLoggedIn = localStorage.getItem('user:token') !== null;
+const ProtectedRoute = ({ children,auth=false }) => {
+  const isLoggedIn = localStorage.getItem('user:token') !== null|| false;
 
-//   if (!isLoggedIn) {
-//     // Redirect to the signin page if not logged in
-//     return <Navigate to="/" replace />;
-//   }
+  if (!isLoggedIn && auth) {
+    // Redirect to the signin page if not logged in
+    return <Navigate to="/" replace />;
+  }
 
-//   return children;
-// };
+  return children;
+};
 
 function App() {
   return (
@@ -21,9 +21,9 @@ function App() {
         <Route
           path="/dashboard"
           element={
-           
+           <ProtectedRoute auth={true}>
               <Dashboard />
-            
+            </ProtectedRoute>
           }
         />
       </Routes>

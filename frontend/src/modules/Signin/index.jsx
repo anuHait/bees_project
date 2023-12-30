@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 function Index() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState(''); // New state for name
   const [isSignUp, setIsSignUp] = useState(true); // New state for conditional rendering
+  const navigate = useNavigate();
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -24,9 +27,29 @@ function Index() {
     if (isSignUp) {
       // Handle sign up
       console.log('Signing up with:', { email, password, name });
+      const resp=axios.post('http://localhost:8000/api/signup', {name, email, password })
+      .then((response) => {
+        console.log(response);
+        //alert(response.data);
+        if(response.status===200){
+          Swal.fire(`${response.data}`);
+
+          setIsSignUp(!isSignUp);
+        }
+        //return <Navigate to="/dashboard" replace />;
+      })
+
     } else {
-      // Handle sign in
+      
       console.log('Signing in with:', { email, password });
+      const resp=axios.post('http://localhost:8000/api/login', { email, password })
+      .then((response) => {
+        console.log(response);
+        if(response.status===200){
+          localStorage.setItem('user:token', response.data.token);
+         navigate('/dashboard', { replace: true });
+        }
+      })
     }
   };
 

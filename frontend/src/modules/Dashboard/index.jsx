@@ -78,7 +78,7 @@ const Index = () => {
           <h1 className="font-semibold text-gray-700 text-lg">Messages</h1>
           <div className="flex flex-col gap-4 ">
             {item.map((item) => (
-              <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-400 p-3">
+              <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-300 p-3">
                 <div className="flex items-center">
                   <img
                     src={item.img}
@@ -107,7 +107,7 @@ const Index = () => {
             <p className="text-gray-700 text-md">Active</p>
           </div>
         </div>
-        <div className="h-[75%] border  overflow-scroll">
+        <div className="h-[80%] border  overflow-scroll">
           <div className="h-[1000px] px-10 py-14">
             <div className="h-20 max-w-[60%] mb-10 text-sm rounded-b-xl rounded-tl-xl bg-blue-500 text-white p-4">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae,
