@@ -2,8 +2,57 @@ const express = require("express");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const io=require('socket.io')(8080,{
+  cors:{
+    origin:'http://localhost:3000',
+  }
+})
+
+let users = [];
+io.on('connection', socket => {
+    console.log('User connected', socket.id);
+    socket.on('addUser', userId => {
+        const isUserExist = users.find(user => user.userId === userId);
+        if (!isUserExist) {
+            const user = { userId, socketId: socket.id };
+            users.push(user);
+            io.emit('getUsers', users);
+        }
+    });
+
+    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
+        const receiver = users.find(user => user.userId === receiverId);
+        const sender = users.find(user => user.userId === senderId);
+        const user = await User.findById(senderId);
+        console.log('sender :>> ', sender, receiver);
+        if (receiver) {
+            io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
+                senderId,
+                message,
+                conversationId,
+                receiverId,
+                user: { id: user._id, name: user.name, email: user.email }
+            });
+            }else {
+                io.to(sender.socketId).emit('getMessage', {
+                    senderId,
+                    message,
+                    conversationId,
+                    receiverId,
+                    user: { id: user._id, name: user.name, email: user.email }
+                });
+            }
+        });
+
+    socket.on('disconnect', () => {
+        users = users.filter(user => user.socketId !== socket.id);
+        io.emit('getUsers', users);
+    });
+    // io.emit('getUsers', socket.userId);
+});
 
 const port = process.env.PORT || 8000;
+
 
 require("./db/connection");
 
@@ -141,7 +190,7 @@ app.post('/api/messages', async (req, res) => {
 app.get("/api/messages/:conversationId", async (req, res) => {
   try {
     const conversationId = req.params.conversationId;
-    if (conversationId === "newID") res.status(200).json([]);
+    if (conversationId === "new") res.status(200).json([]);
     const messages = await Message.find({ conversationId });
     const messagesData = Promise.all(
       messages.map(async (message) => {
@@ -156,21 +205,18 @@ app.get("/api/messages/:conversationId", async (req, res) => {
   } catch (error) {}
 });
 
-app.get("/api/getUsers", async (req, res) => {
+app.get('/api/users/:userId', async (req, res) => {
   try {
-    const users = await User.find();
-    const userData = Promise.all(
-      users.map(async (user) => {
-        return {
-          user: { userId: user._id, email: user.email, name: user.name },
-        };
-      })
-    );
-    res.status(200).json(await userData);
+      const userId = req.params.userId;
+      const users = await User.find({ _id: { $ne: userId } });
+      const usersData = Promise.all(users.map(async (user) => {
+          return { user: { email: user.email, name: user.name, receiverId: user._id } }
+      }))
+      res.status(200).json(await usersData);
   } catch (error) {
-    console.log(error, "Error");
+      console.log('Error', error)
   }
-});
+})
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });

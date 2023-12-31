@@ -1,17 +1,47 @@
-import { useState, React,useEffect } from "react";
+import { useState, React,useEffect ,useRef} from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { IoSend } from "react-icons/io5";
 import { CiCirclePlus } from "react-icons/ci";
+import {io} from 'socket.io-client';
 import axios from "axios";  
 const Index = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')));
   const [conversation, setConversation] = useState([]);
   const [messages, setMessages] = useState({});
+  const [socket, setSocket] = useState(null);
+  const [message, setMessage] = useState('')
+  const [users, setUsers] = useState([])
+
+  console.log("messages:", messages);
+	const messageRef = useRef(null)
+
   const handleOpen = () => {
     setIsOpen(!isOpen);
   };
+  useEffect(() => {
+		setSocket(io('http://localhost:8080'))
+	}, [])
+
+  useEffect(() => {
+    socket?.emit('addUser', user?.id)
+    socket?.on('getUsers', users => {
+      console.log("active users",users);
+    })
+    socket?.on('getMessage', (data) => {
+      console.log("data:", data);
+      setMessages((prev) => ({
+        ...prev,
+        messages: [...prev.messages, { user: data.user, message: data.message }],
+        receiver: data.user
+      }));
+    });
+    
+    
+    
+  }, [socket])
+
   useEffect(() => {
 		const loggedInUser = JSON.parse(localStorage.getItem('user:detail'))
     console.log("loggedInUser:", loggedInUser);
@@ -31,23 +61,73 @@ const Index = () => {
     fetchConversations();
     
 	}, []);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8000/api/users/${user?.id}`);
+        const resData = res.data;
+        console.log("resp data list of users:", res);
+        setUsers(resData);
+      } catch (error) {
+        // Handle errors here
+        console.error('Error:', error);
+      }
+    };
+  
+    fetchUsers();
+  }, []);
   console.log("conversation:",conversation);
   
  //console.log("conversation:",conversation);
- const fetchMessages = async (conversationId) => {
+ const fetchMessages = async (conversationId,userId) => {
   try {
+    if (conversationId === 'new') {
+      console.log("Clicked on 'new', handle accordingly");
+      const otherUser = conversation.find(conv => conv.conversationId === conversationId)?.user;
+      //setMessages({ messages: [], receiver: {name:otherUser.name,email:otherUser.email} });
+      setMessages({ messages: [], receiver: { name: 'New User', email: 'newuser@example.com' } });
+      return;
+    }
     const res = await axios.get(`http://localhost:8000/api/messages/${conversationId}`);
     const resData = res.data;
     
     // Assuming conversation has information about the other user
     const otherUser = conversation.find(conv => conv.conversationId === conversationId)?.user;
-
+    console.log("otherUser:", otherUser);
+    
     setMessages({ messages: resData, receiver: otherUser });
     console.log("messages:", messages);
   } catch (error) {
     console.error("Error fetching messages:", error);
   }
 };
+const sendMessage = async (e) => {
+  setMessage('')
+  socket?.emit('sendMessage', {
+    senderId: user?.id,
+    receiverId: messages?.receiver?.user?.receiverId,  // Update this line
+    message,
+    conversationId: messages?.conversationId
+  });
+  
+  try {
+    const res = await axios.post('http://localhost:8000/api/messages', {
+      conversationId: messages?.conversationId,
+      senderId: user?.id,
+      message,
+      receiverId: messages?.receiver?.receiverId
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log(res.data);
+  } catch (error) {
+    // Handle errors here
+    console.error('Error:', error);
+  }
+}
+
 
   return (
     <div className="w-[100%] flex gap-4 m-5">
@@ -82,7 +162,7 @@ const Index = () => {
               conversation?.length>0?(
               conversation?.map((conversation) => (
               <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-300 p-3"
-              onClick={()=>{fetchMessages(conversation?.conversationId)}}>
+              onClick={()=>{fetchMessages(conversation?.conversationId,'')}}>
                 <div className="flex items-center">
                   <img
                     src="https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg"
@@ -96,7 +176,7 @@ const Index = () => {
                 </div>
               </div>)
             )):(
-              <div className="font-bold mt-12">No conversations or no conversation selected </div>
+              <div className="font-bold mt-12">No conversations </div>
             )}
           </div>
         </div>
@@ -126,10 +206,10 @@ const Index = () => {
                   const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
                   const id = loggedInUser?.id;
                   const isCurrentUser = id === user?.senderId;
-            
+              
                   return (
                     <div
-                      key={user.id} // Make sure to add a unique key for each rendered item
+                      key={user.id}
                       className={`h-20 max-w-[60%] mb-10 text-sm rounded-b-xl ${
                         isCurrentUser ? 'rounded-tl-xl bg-purple-100 ml-auto text-black' : 'rounded-tr-xl bg-blue-500 text-white'
                       } p-4`}
@@ -139,8 +219,9 @@ const Index = () => {
                   );
                 })
               ) : (
-                <div className="font-bold text-lg m-20">No messages</div>
+                <div className="font-bold text-lg m-20">No messages or conversation selected</div>
               )
+              
             }
             
             
@@ -153,9 +234,10 @@ const Index = () => {
                 type="text"
                 className="rounded-lg p-2 w-[92%] bg-gray-100"
                 placeholder="Type a message here"
+                value={message} onChange={(e) => setMessage(e.target.value)} 
               />
               <div className="flex items center gap-2 flex-row">
-                <IoSend className="font-semibold text-xl text-gray-600 " />
+                <IoSend className="font-semibold text-xl text-gray-600 " onClick={() => sendMessage()} />
                 <CiCirclePlus className="text-2xl text-gray-600 font-bold" />
               </div>
             </div>
@@ -165,7 +247,31 @@ const Index = () => {
        
           
       </div>
-      <div className="border shadow-md h-screen rounded-lg w-[25%]"></div>
+      <div className="border shadow-md h-screen rounded-lg w-[25%]">
+      <h1 className="font-semibold text-lg m-5">People</h1>
+      <div className="p-4">
+      {
+        users?.length>0?(
+        users?.map((user) => (
+        <div className=" flex flex-row gap-1 border-b-2 justify-start items-center  border-gray-300 p-3"
+        onClick={()=>{fetchMessages('new',user.id)}}>
+          <div className="flex items-center">
+            <img
+              src="https://res.cloudinary.com/dcugof3zo/image/upload/v1703953608/xuan-nguyen-zr0beNrnvgQ-unsplash_uvbuxw.jpg"
+              className="w-16 h-16 rounded-[100%] border-gray-300 border-2"
+              alt="img"
+            />
+          </div>
+          <div className="flex flex-col justify-start items-start">
+            <p className="font-semibold text-lg">{user?.user.name}</p>
+            <p className="text-md text-gray-700">{user?.user.email}</p>
+          </div>
+        </div>)
+      )):(
+        <div className="font-bold mt-12">No conversations </div>
+      )}
+      </div>
+      </div>
     </div>
   );
 };
